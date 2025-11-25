@@ -36,21 +36,24 @@ def load_notes():
     with open("./openai_predictions.json", "r") as f:
         openai_notes = json.load(f)
 
+    with open("./flan_test_predictions.json", "r") as f:
+        flan_notes = json.load(f)
+
     # Load HuggingFace dataset from disk
     dataset = load_from_disk("./combined_normalized_data")
 
     # Extract test split soap notes
     gt_notes = dataset["test"]["soap_note"]
 
-    return led_notes, openai_notes, gt_notes
+    return led_notes, openai_notes, flan_notes, gt_notes
 
 
-led_notes, openai_notes, gt_notes = load_notes()
+led_notes, openai_notes, flan_notes, gt_notes = load_notes()
 
-num_notes = min(len(led_notes), len(openai_notes), len(gt_notes))
+num_notes = min(len(led_notes), len(openai_notes), len(flan_notes), len(gt_notes))
 
 # ---------- UI ----------
-st.title("SOAP Note Comparator (3-Way: LED vs OpenAI vs Ground Truth)")
+st.title("SOAP Note Comparator (4-Way: LED vs OpenAI vs Flan-T5 vs Ground Truth)")
 
 st.sidebar.header("Select Note")
 selected_idx = st.sidebar.selectbox(
@@ -62,6 +65,7 @@ selected_idx = st.sidebar.selectbox(
 # Parse SOAP components
 note_led = parse_soap(led_notes[selected_idx])
 note_openai = parse_soap(openai_notes[selected_idx])
+note_flan = parse_soap(flan_notes[selected_idx])
 note_gt = parse_soap(gt_notes[selected_idx])
 
 st.header(f"Comparison for Note {selected_idx}")
@@ -77,7 +81,7 @@ section_names = {
 # ---------- Section-by-section comparison ----------
 for sec in sections:
     st.subheader(f"{sec}: {section_names[sec]}")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.markdown("**LED Prediction**")
@@ -88,5 +92,9 @@ for sec in sections:
         st.text(note_openai[sec])
 
     with col3:
+        st.markdown("**Flan-T5 Prediction**")
+        st.text(note_flan[sec])
+
+    with col4:
         st.markdown("**Ground Truth**")
         st.text(note_gt[sec])
